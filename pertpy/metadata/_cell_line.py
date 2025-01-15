@@ -54,6 +54,8 @@ class CellLine(MetaData):
                     is_zip=False,
                 )
             self.depmap = pd.read_csv(depmap_cell_line_path)
+            self.depmap = self.depmap.reset_index().rename(columns={"CellLineName": "cell_line_name"})
+            self.depmap = self.depmap.reset_index().rename(columns={"StrippedCellLineName": "stripped_cell_line_name"})
         else:
             # Download cell line metadata from The Genomics of Drug Sensitivity in Cancer Project
             # Source: https://www.cancerrxgene.org/celllines
@@ -216,7 +218,7 @@ class CellLine(MetaData):
             >>> adata_annotated = pt_metadata.annotate(adata=adata,
             >>>                                        reference_id='cell_line_name',
             >>>                                        query_id='cell_line_name',
-            >>>                                        fetch=["cell_line_name", "age", "primary_disease"],
+            >>>                                        fetch=["cell_line_name", "Age", "OncotreePrimaryDisease"],
             >>>                                        copy=True)
         """
         if copy:

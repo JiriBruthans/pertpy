@@ -321,6 +321,7 @@ class CellLine(MetaData):
             query_id: The column of `.obs` with cell line information. Defaults to "cell_line_name" if `cell_line_source` is sanger, otherwise "DepMap_ID".
             cell_line_source: The bulk rna expression data from either broad or sanger cell line.
             verbosity: The number of unmatched identifiers to print, can be either non-negative values or "all".
+            gene_identifier: The type of gene identifier saved in the fetched meta data, 'gene_name', 'gene_ID' or 'both'.
             copy: Determines whether a copy of the `adata` is returned.
 
         Returns:

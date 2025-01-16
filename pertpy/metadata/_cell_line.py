@@ -306,7 +306,7 @@ class CellLine(MetaData):
     def annotate_bulk_rna(
         self,
         adata: AnnData,
-        query_id: str = "cell_line_name",
+        query_id: str = None,
         cell_line_source: Literal["broad", "sanger"] = "sanger",
         verbosity: int | str = 5,
         gene_identifier: Literal["gene_name", "gene_ID", "both"] = "gene_ID",
@@ -342,32 +342,44 @@ class CellLine(MetaData):
         # Make sure that the specified `cell_line_type` can be found in the bulk rna expression data,
         # then we can compare these keys and fetch the corresponding metadata.
         if query_id not in adata.obs.columns:
-            raise ValueError(
-                f"The specified `query_id` {query_id} can't be found in the `adata.obs`. \n"
-                "Ensure that you are using one of the available query IDs present in the adata.obs for the annotation."
-                "If the desired query ID is not available, you can fetch the cell line metadata "
-                "using the `annotate()` function before calling 'annotate_bulk_rna()'. "
-                "This ensures that the required query ID is included in your data, e.g. stripped_cell_line_name, DepMap ID."
-            )
+            if query_id is not None:
+                raise ValueError(
+                    f"The specified `query_id` {query_id} can't be found in the `adata.obs`. \n"
+                    "Ensure that you are using one of the available query IDs present in the adata.obs for the annotation."
+                    "If the desired query ID is not available, you can fetch the cell line metadata "
+                    "using the `annotate()` function before calling 'annotate_bulk_rna()'. "
+                    "This ensures that the required query ID is included in your data, e.g. stripped_cell_line_name, DepMap ID."
+                )
 
         identifier_num_all = len(adata.obs[query_id].unique())
 
         # Lazily download the bulk rna expression data
         if cell_line_source == "sanger":
+            if query_id is None:
+                query_id = "cell_line_name"
+            if query_id not in adata.obs.columns:
+                raise ValueError(
+                    "To annotate bulk RNA data from Broad Institue, `cell_line_name` is used as default reference and query identifier if no `query_id` is given."
+                    "Ensure that you have column `cell_line_name` in `adata.obs` or specify column name in which cell line name is stored."
+                    "If cell line name isn't available in 'adata.obs', use `annotate()` to annotate the cell line first."
+                )
             if self.bulk_rna_sanger is None:
                 self._download_bulk_rna(cell_line_source="sanger")
             reference_id = "model_name"
             not_matched_identifiers = list(set(adata.obs[query_id]) - set(self.bulk_rna_sanger.index))
         else:
+            if query_id is None:
+                query_id = "DepMap_ID"
+            if query_id not in adata.obs.columns:
+                raise ValueError(
+                    "To annotate bulk RNA data from Broad Institue, `DepMap_ID` is used as default reference and query identifier if no `query_id` is given."
+                    "Ensure that you have column `DepMap_ID` in `adata.obs` or specify column name in which DepMap ID is stored."
+                    "If DepMap ID isn't available in 'adata.obs', use `annotate()` to annotate the cell line first."
+                )
             reference_id = "DepMap_ID"
-            logger.warning(
-                "To annotate bulk RNA data from Broad Institue, `DepMap_ID` is used as default reference and query identifier if no `reference_id` is given."
-                "If `DepMap_ID` isn't available in 'adata.obs', use `annotate()` to annotate the cell line first."
-            )
+
             if self.bulk_rna_broad is None:
                 self._download_bulk_rna(cell_line_source="broad")
-            if query_id == "cell_line_name":
-                query_id = "DepMap_ID"
             not_matched_identifiers = list(set(adata.obs[query_id]) - set(self.bulk_rna_broad.index))
 
         self._warn_unmatch(

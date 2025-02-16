@@ -351,16 +351,18 @@ class CellLine(MetaData):
                     "using the `annotate()` function before calling 'annotate_bulk_rna()'. "
                     "This ensures that the required query ID is included in your data, e.g. stripped_cell_line_name, DepMap ID."
                 )
-
+        if query_id is None:
+            if cell_line_source == "sanger":
+                query_id = "cell_line_name"
+            else:
+                query_id = "DepMap_ID"
         identifier_num_all = len(adata.obs[query_id].unique())
 
         # Lazily download the bulk rna expression data
         if cell_line_source == "sanger":
-            if query_id is None:
-                query_id = "cell_line_name"
             if query_id not in adata.obs.columns:
                 raise ValueError(
-                    "To annotate bulk RNA data from Broad Institue, `cell_line_name` is used as default reference and query identifier if no `query_id` is given."
+                    "To annotate bulk RNA data from Wellcome Sanger Institute, `cell_line_name` is used as default reference and query identifier if no `query_id` is given."
                     "Ensure that you have column `cell_line_name` in `adata.obs` or specify column name in which cell line name is stored."
                     "If cell line name isn't available in 'adata.obs', use `annotate()` to annotate the cell line first."
                 )
@@ -369,8 +371,6 @@ class CellLine(MetaData):
             reference_id = "model_name"
             not_matched_identifiers = list(set(adata.obs[query_id]) - set(self.bulk_rna_sanger.index))
         else:
-            if query_id is None:
-                query_id = "DepMap_ID"
             if query_id not in adata.obs.columns:
                 raise ValueError(
                     "To annotate bulk RNA data from Broad Institue, `DepMap_ID` is used as default reference and query identifier if no `query_id` is given."
@@ -679,9 +679,9 @@ class CellLine(MetaData):
                 "Dimensions of adata.X do not match those of metadata. Ensure that they have the same gene list."
             )
         if isinstance(adata.obsm[metadata_key], pd.DataFrame):
-            # Give warning if the genes are not the same
+            # Raise error if the genes are not the same
             if sum(adata.obsm[metadata_key].columns != adata.var.index.values) > 0:
-                logger.warning(
+                raise ValueError(
                     "Column name of metadata is not the same as the index of adata.var. Ensure that the genes are in the same order."
                 )
 

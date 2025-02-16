@@ -489,7 +489,8 @@ class CellLine(MetaData):
         adata.obsm["proteomics_" + protein_information] = (
             self.proteomics[[reference_id, protein_id, protein_information]]
             .pivot(index=reference_id, columns=protein_id, values=protein_information)
-            .reindex(adata.obs.index)
+            .reindex(adata.obs[query_id])
+            .set_index(adata.obs.index)
         )
         return adata
 
